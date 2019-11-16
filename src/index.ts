@@ -1,10 +1,12 @@
 import boxVertexShader from './shaders/boxVertexShader.glsl'
 import boxFragmentShader from './shaders/boxFragmentShader.glsl'
 import Drawable from './js/drawable'
-
+import { glMatrix, mat4, mat3, vec3 } from 'gl-matrix'
+import {boxIndices,boxVertices, colorRGB} from './resources/boxVectors'
 class CanvasApp {
     private canvas: HTMLCanvasElement;
     private gl: WebGLRenderingContext;
+    private program: WebGLProgram;
     private viewMatrix: Float32Array;
     private projMatrix: Float32Array;
     private objectList: Drawable[] = [];
@@ -20,16 +22,55 @@ class CanvasApp {
         this.gl.enable(this.gl.DEPTH_TEST);
 
         this.setupProgram();
+        this.setupBuffers();
         //this.setupListeners();
         requestAnimationFrame(this.mainLoop.bind(this));
 
     }
 
+    private setupBuffers(): void {
+        const gl:WebGLRenderingContext = this.gl;
+        const program:WebGLProgram = this.program;
+
+        const boxVertexBufferObject:WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
+        console.log(boxVertices);
+        const boxIndexBufferObject:WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
+
+        const positionAttribLocation:number = gl.getAttribLocation(program, 'vertPosition');
+        const colorAttribLocation:number = gl.getAttribLocation(program, 'vertColor');
+        gl.vertexAttribPointer(
+            positionAttribLocation, // Attribute location
+            3, // Number of elements per attribute
+            gl.FLOAT, // Type of elements
+            false,
+            3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+            0 // Offset from the beginning of a single vertex to this attribute
+        );
+        var boxRGBBufferObject:WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, boxRGBBufferObject);
+        gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(colorRGB), gl.STATIC_DRAW);
+
+        gl.vertexAttribPointer(
+            colorAttribLocation, // Attribute location
+            3, // Number of elements per attribute
+            gl.UNSIGNED_BYTE, // Type of elements
+            true,
+            0, // Size of an individual vertex
+            0 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+        );
+
+        gl.enableVertexAttribArray(positionAttribLocation);
+        gl.enableVertexAttribArray(colorAttribLocation);
+    }
+
     private setupProgram(): void {
         const vertexShader: WebGLShader = this.compileShader(this.gl.VERTEX_SHADER, boxVertexShader);
         const fragmentShader: WebGLShader = this.compileShader(this.gl.FRAGMENT_SHADER, boxFragmentShader);
-        const program = this.createProgram(vertexShader, fragmentShader);
-
+        this.program =  this.createProgram(vertexShader, fragmentShader);
     }
 
     private compileShader(SHADER_TYPE: number, shaderString: string) {
