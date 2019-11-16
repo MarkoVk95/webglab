@@ -1,4 +1,7 @@
-import Drawable  from './js/drawable'
+import boxVertexShader from './shaders/boxVertexShader.glsl'
+import boxFragmentShader from './shaders/boxFragmentShader.glsl'
+import Drawable from './js/drawable'
+
 class CanvasApp {
     private canvas: HTMLCanvasElement;
     private gl: WebGLRenderingContext;
@@ -22,14 +25,47 @@ class CanvasApp {
 
     }
 
-    private setupProgram(): void{
+    private setupProgram(): void {
+        const vertexShader: WebGLShader = this.compileShader(this.gl.VERTEX_SHADER, boxVertexShader);
+        const fragmentShader: WebGLShader = this.compileShader(this.gl.FRAGMENT_SHADER, boxFragmentShader);
+        const program = this.createProgram(vertexShader, fragmentShader);
 
     }
+
+    private compileShader(SHADER_TYPE: number, shaderString: string) {
+        const shader: WebGLShader = this.gl.createShader(SHADER_TYPE);
+        this.gl.shaderSource(shader, shaderString);
+        this.gl.compileShader(shader);
+        if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+            console.error('ERROR compiling shader!', this.gl.getShaderInfoLog(shader));
+            return;
+        }
+        return shader;
+    }
+
+    private createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
+        const program: WebGLProgram = this.gl.createProgram();
+        this.gl.attachShader(program, vertexShader);
+        this.gl.attachShader(program, fragmentShader);
+        this.gl.linkProgram(program);
+        if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+            console.error('ERROR linking program!', this.gl.getProgramInfoLog(program));
+            return;
+        }
+        this.gl.validateProgram(program);
+        if (!this.gl.getProgramParameter(program, this.gl.VALIDATE_STATUS)) {
+            console.error('ERROR validating program!', this.gl.getProgramInfoLog(program));
+            return;
+        }
+        return program;
+    }
+
     private setupListeners(): void {
         throw new Error("Method not implemented.");
     }
+
     private mainLoop(): void {
-         this.draw();
+        this.draw();
     }
 
     private draw(): void {
@@ -44,8 +80,8 @@ class CanvasApp {
 
     private resize(canvas: HTMLCanvasElement): void {
         // Lookup the size the browser is displaying the canvas.
-        const displayWidth:number = canvas.clientWidth;
-        const displayHeight:number = canvas.clientHeight;
+        const displayWidth: number = canvas.clientWidth;
+        const displayHeight: number = canvas.clientHeight;
 
         // Check if the canvas is not the same size.
         if (canvas.width != displayWidth ||
