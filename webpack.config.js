@@ -16,7 +16,7 @@ module.exports = {
       },
       {
         test: /\.glsl$/,
-        loader: 'webpack-glsl'
+        loader: 'ts-shader-loader'
       },
       {
         test: /\.js$/,
