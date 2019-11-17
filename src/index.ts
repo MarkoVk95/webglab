@@ -31,6 +31,7 @@ class CanvasApp {
 
         this.objectList = Array.from([new bWallList(this.gl, this.program),
                                         new hWallList(this.gl, this.program),
+                                        new vWallList(this.gl, this.program)
                                        ]);
         requestAnimationFrame(this.mainLoop.bind(this));
 
