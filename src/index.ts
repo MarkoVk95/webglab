@@ -3,13 +3,16 @@ import boxFragmentShader from './shaders/boxFragmentShader.glsl'
 import Drawable from './js/drawable'
 import { glMatrix, mat4, mat3, vec3 } from 'gl-matrix'
 import { boxIndices, boxVertices, colorRGB } from './resources/boxVectors'
+import bWallList from './js/bWallList'
+import hWallList from './js/hWallList'
+import vWallList from './js/vWallList'
 class CanvasApp {
     private canvas: HTMLCanvasElement;
     private gl: WebGLRenderingContext;
     private program: WebGLProgram;
     private viewMatrix: mat4;
     private projMatrix: mat4;
-    private objectList: Drawable[] = [];
+    private objectList: Drawable[];
     constructor() {
         this.canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
         this.gl = this.canvas.getContext("webgl");
@@ -25,6 +28,9 @@ class CanvasApp {
         this.setupBuffers();
         this.setupInitialUniforms();
         //this.setupListeners();
+
+        this.objectList = Array.from([new bWallList(this.gl, this.program),
+                                       ]);
         requestAnimationFrame(this.mainLoop.bind(this));
 
     }
@@ -128,7 +134,6 @@ class CanvasApp {
         this.resize(this.gl.canvas as HTMLCanvasElement);
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-
         for (const entry of this.objectList) {
             entry.draw();
         }
