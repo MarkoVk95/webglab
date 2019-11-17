@@ -1,41 +1,41 @@
-const w:number = 9;
+export const boxW:number = 9;
 export const boxVertices =
     [ // X, Y, Z 
       // Top
-      -w, w, -w,
-      -w, w, w,
-      w, w, w,
-      w, w, -w,
+      -boxW, boxW, -boxW,
+      -boxW, boxW, boxW,
+      boxW, boxW, boxW,
+      boxW, boxW, -boxW,
 
       // Left
-      -w, w, w,
-      -w, -w, w,
-      -w, -w, -w,
-      -w, w, -w,
+      -boxW, boxW, boxW,
+      -boxW, -boxW, boxW,
+      -boxW, -boxW, -boxW,
+      -boxW, boxW, -boxW,
 
       // Right
-      w, w, w,
-      w, -w, w,
-      w, -w, -w,
-      w, w, -w,
+      boxW, boxW, boxW,
+      boxW, -boxW, boxW,
+      boxW, -boxW, -boxW,
+      boxW, boxW, -boxW,
 
       // Front
-      w, w, w,
-      w, -w, w,
-      -w, -w, w,
-      -w, w, w,
+      boxW, boxW, boxW,
+      boxW, -boxW, boxW,
+      -boxW, -boxW, boxW,
+      -boxW, boxW, boxW,
 
       // Back
-      w, w, -w,
-      w, -w, -w,
-      -w, -w, -w,
-      -w, w, -w,
+      boxW, boxW, -boxW,
+      boxW, -boxW, -boxW,
+      -boxW, -boxW, -boxW,
+      -boxW, boxW, -boxW,
 
       // Bottom
-      -w, -w, -w,
-      -w, -w, w,
-      w, -w, w,
-      w, -w, -w,
+      -boxW, -boxW, -boxW,
+      -boxW, -boxW, boxW,
+      boxW, -boxW, boxW,
+      boxW, -boxW, -boxW,
     ];
 
  export const colorRGB =
