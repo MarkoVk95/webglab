@@ -30,6 +30,7 @@ class CanvasApp {
         //this.setupListeners();
 
         this.objectList = Array.from([new bWallList(this.gl, this.program),
+                                        new hWallList(this.gl, this.program),
                                        ]);
         requestAnimationFrame(this.mainLoop.bind(this));
 
@@ -44,7 +45,7 @@ class CanvasApp {
         mat4.lookAt(this.viewMatrix, [150, -150, 550], [150.0, -150.0, 0.0], [0.0, 1.0, 0.0]);
         //setup -PROJECTION MATRIX-
         this.projMatrix = mat4.create();
-        mat4.perspective(this.projMatrix, glMatrix.toRadian(45),this.gl.canvas.width  / this.gl.canvas.height, 1, 2000);
+        mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.gl.canvas.width / this.gl.canvas.height, 1, 2000);
         //setup -INITIAL UNIFORMS-
         this.gl.uniformMatrix4fv(matViewUniformLocation, false, this.viewMatrix);
         this.gl.uniformMatrix4fv(matProjUniformLocation, false, this.projMatrix);
