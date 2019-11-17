@@ -1,6 +1,6 @@
 import boxVertexShader from './shaders/boxVertexShader.glsl'
 import boxFragmentShader from './shaders/boxFragmentShader.glsl'
-import Drawable from './js/drawable'
+import { Drawable, WallContainer } from './js/drawable'
 import { glMatrix, mat4, mat3, vec3 } from 'gl-matrix'
 import { boxIndices, boxVertices, colorRGB } from './resources/boxVectors'
 import bWallList from './js/bWallList'
@@ -13,6 +13,7 @@ class CanvasApp {
     private viewMatrix: mat4;
     private projMatrix: mat4;
     private objectList: Drawable[];
+
     constructor() {
         this.canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
         this.gl = this.canvas.getContext("webgl");
@@ -30,10 +31,11 @@ class CanvasApp {
         //this.setupListeners();
 
         this.objectList = Array.from([new bWallList(this.gl, this.program),
-                                        new hWallList(this.gl, this.program),
-                                        new vWallList(this.gl, this.program)
-                                       ]);
+        new hWallList(this.gl, this.program),
+        new vWallList(this.gl, this.program)
+        ]);
         requestAnimationFrame(this.mainLoop.bind(this));
+        this.initRecursiveLab();
 
     }
 
@@ -41,13 +43,13 @@ class CanvasApp {
         this.gl.useProgram(this.program);
         const matViewUniformLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.program, 'mView');
         const matProjUniformLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.program, 'mProj');
-        //setup -VIEWMATRIX-
+        //-> setup -VIEWMATRIX-
         this.viewMatrix = mat4.create();
         mat4.lookAt(this.viewMatrix, [150, -150, 550], [150.0, -150.0, 0.0], [0.0, 1.0, 0.0]);
-        //setup -PROJECTION MATRIX-
+        //-> setup -PROJECTION MATRIX-
         this.projMatrix = mat4.create();
         mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.gl.canvas.width / this.gl.canvas.height, 1, 2000);
-        //setup -INITIAL UNIFORMS-
+        //-> setup -INITIAL UNIFORMS-
         this.gl.uniformMatrix4fv(matViewUniformLocation, false, this.viewMatrix);
         this.gl.uniformMatrix4fv(matProjUniformLocation, false, this.projMatrix);
     }
@@ -140,6 +142,67 @@ class CanvasApp {
             entry.draw();
         }
     }
+
+    private initRecursiveLab() {
+        let current;
+        let grid = [];
+        let stack = [];
+        for (var i = 0; i < 20; i++) {
+            grid[i] = [];
+            for (var j = 0; j < 20; j++)
+                grid[i][j] = { i, j };
+        }
+        current = grid[0][0];
+        const nextMove = () => {
+            current.visited = true;
+            let next = neighbour(current);
+            if (next) {
+                next.visited = true;
+                stack.push(current);
+                removeWall(current, next);
+                current = next;
+            } 
+            else if (stack.length > 0)
+                current = stack.pop();
+            else if (stack.length == 0)
+                return;
+            this.mainLoop();
+
+            setTimeout(nextMove.bind(this), 1);
+        };
+
+        const removeWall = (current, next) => {
+            var i = current.i - next.i;
+            if (i == 1 || i == -1)
+                (this.objectList[2] as WallContainer).setWall(next.i, current.j);
+            var j = current.j - next.j;
+            if (j == 1 || j == -1)
+                (this.objectList[1] as WallContainer).setWall(current.i, next.j);
+        };
+
+        const neighbour = (current) => {
+            let neighbors = [];
+            if (current.j - 1 > 0)
+                var top = grid[current.i][(current.j) - 1];
+            if (current.j + 1 < 20)
+                var bottom = grid[current.i][(current.j) + 1];
+            if (current.i - 1 > 0)
+                var left = grid[(current.i) - 1][current.j];
+            if (current.i + 1 < 20)
+                var right = grid[(current.i) + 1][current.j];
+            if (top && !top.visited) neighbors.push(top);
+            if (right && !right.visited) neighbors.push(right);
+            if (bottom && !bottom.visited) neighbors.push(bottom);
+            if (left && !left.visited) neighbors.push(left);
+            if (neighbors.length > 0) {
+                var n = Math.floor(Math.random() * neighbors.length);
+                return neighbors[n];
+            }
+        };
+
+        // -> start the labyrinth
+        nextMove();
+    };
 
     private resize(canvas: HTMLCanvasElement): void {
         // Lookup the size the browser is displaying the canvas.
