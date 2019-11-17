@@ -1,4 +1,4 @@
-import Drawable from "./drawable";
+import {Drawable} from "./drawable";
 import { mat4 } from 'gl-matrix'
 import { boxW, boxIndices } from '../resources/boxVectors'
 export default class bWallList implements Drawable {
