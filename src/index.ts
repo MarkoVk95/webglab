@@ -2,10 +2,13 @@ import boxVertexShader from './shaders/boxVertexShader.glsl'
 import boxFragmentShader from './shaders/boxFragmentShader.glsl'
 import { Drawable, WallContainer } from './js/drawable'
 import { glMatrix, mat4, mat3, vec3 } from 'gl-matrix'
-import { boxIndices, boxVertices, colorRGB } from './resources/boxVectors'
+import { boxIndices, boxVertices, boxTextST } from './resources/boxVectors'
 import bWallList from './js/bWallList'
 import hWallList from './js/hWallList'
 import vWallList from './js/vWallList'
+
+import * as image from './resources/wall.png';
+
 class CanvasApp {
     private canvas: HTMLCanvasElement;
     private gl: WebGLRenderingContext;
@@ -13,6 +16,7 @@ class CanvasApp {
     private viewMatrix: mat4;
     private projMatrix: mat4;
     private objectList: Drawable[];
+    private boxTexture: WebGLTexture;
 
     constructor() {
         this.canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -66,7 +70,7 @@ class CanvasApp {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
 
         const positionAttribLocation: number = gl.getAttribLocation(program, 'vertPosition');
-        const colorAttribLocation: number = gl.getAttribLocation(program, 'vertColor');
+        const textureAttribLocation: number = gl.getAttribLocation(program, 'a_textureVec');
         gl.vertexAttribPointer(
             positionAttribLocation, // Attribute location
             3, // Number of elements per attribute
@@ -75,21 +79,46 @@ class CanvasApp {
             3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
             0 // Offset from the beginning of a single vertex to this attribute
         );
-        var boxRGBBufferObject: WebGLBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, boxRGBBufferObject);
-        gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(colorRGB), gl.STATIC_DRAW);
+
+        var boxTextureBufferObject: WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, boxTextureBufferObject);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxTextST), gl.STATIC_DRAW);
 
         gl.vertexAttribPointer(
-            colorAttribLocation, // Attribute location
-            3, // Number of elements per attribute
-            gl.UNSIGNED_BYTE, // Type of elements
-            true,
+            textureAttribLocation, // Attribute location
+            2, // Number of elements per attribute
+            gl.FLOAT, // Type of elements
+            false,
             0, // Size of an individual vertex
-            0 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+            0 * gl.FLOAT, // Offset from the beginning of a single vertex to this attribute
         );
 
+        //-> TEXTURE INITIALIZATION
+         this.boxTexture = gl.createTexture();
+        var boxImg:HTMLImageElement = new Image();
+        boxImg.src = image;
+        console.log(boxImg);
+        boxImg.onload = () => {
+            gl.bindTexture(gl.TEXTURE_2D, this.boxTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                boxImg
+            );
+        };
+        
+        
+
+        //-> ENABLE ATTRIBUTES
         gl.enableVertexAttribArray(positionAttribLocation);
-        gl.enableVertexAttribArray(colorAttribLocation);
+        gl.enableVertexAttribArray(textureAttribLocation);
     }
 
     private setupProgram(): void {
@@ -138,6 +167,8 @@ class CanvasApp {
         this.resize(this.gl.canvas as HTMLCanvasElement);
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+        
+		this.gl.activeTexture(this.gl.TEXTURE0);
         for (const entry of this.objectList) {
             entry.draw();
         }
@@ -161,7 +192,7 @@ class CanvasApp {
                 stack.push(current);
                 removeWall(current, next);
                 current = next;
-            } 
+            }
             else if (stack.length > 0)
                 current = stack.pop();
             else if (stack.length == 0)
