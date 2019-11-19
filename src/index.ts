@@ -18,6 +18,8 @@ class CanvasApp {
     private objectList: Drawable[];
     private boxTexture: WebGLTexture;
     private oldPosition: { x: number, y: number };
+    private perspectiveEye: [number, number, number];
+    private matViewUniformLocation: WebGLUniformLocation;
     private drag: boolean;
 
     constructor() {
@@ -41,7 +43,7 @@ class CanvasApp {
         new hWallList(this.gl, this.program),
         new vWallList(this.gl, this.program)
         ]);
-        //requestAnimationFrame(this.mainLoop.bind(this));
+        //requestAnimationFrame(this.draw.bind(this));
 
         Promise.all(this.objectList.filter(o => {
             if (!o["initializeTexture"]) return false;
@@ -51,16 +53,17 @@ class CanvasApp {
 
     private setupInitialUniforms(): void {
         this.gl.useProgram(this.program);
-        const matViewUniformLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.program, 'mView');
+        this.matViewUniformLocation = this.gl.getUniformLocation(this.program, 'mView');
         const matProjUniformLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.program, 'mProj');
         //-> setup -VIEWMATRIX-
         this.viewMatrix = mat4.create();
-        mat4.lookAt(this.viewMatrix, [150, -150, 550], [150.0, -150.0, 0.0], [0.0, 1.0, 0.0]);
+        this.perspectiveEye = [150, -150, 550];
+        mat4.lookAt(this.viewMatrix, this.perspectiveEye, [this.perspectiveEye[0], this.perspectiveEye[1], 0], [0.0, 1.0, 0.0]);
         //-> setup -PROJECTION MATRIX-
         this.projMatrix = mat4.create();
         mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.gl.canvas.width / this.gl.canvas.height, 1, 2000);
         //-> setup -INITIAL UNIFORMS-
-        this.gl.uniformMatrix4fv(matViewUniformLocation, false, this.viewMatrix);
+        this.gl.uniformMatrix4fv(this.matViewUniformLocation, false, this.viewMatrix);
         this.gl.uniformMatrix4fv(matProjUniformLocation, false, this.projMatrix);
     }
 
@@ -159,21 +162,35 @@ class CanvasApp {
                 let distY = 2 * boxW * jMid;
                 distY += boxW;
                 let distZ = boxW;
-                console.log("position:" + e.clientX + " old pos: " + this.oldPosition.x);
                 let angleX;
                 if (e.clientX != this.oldPosition.x)
                     angleX = e.clientX > this.oldPosition.x ? 5 : -5;
                 else angleX = 0;
                 this.oldPosition.x = e.clientX;
-
                 this.objectList.forEach((entry) => entry.rotateAroundObject(distX, distY, distZ, angleX, [0, 1, 0]));
-                this.mainLoop();
+                this.draw();
             }
         });
-    }
-
-    private mainLoop(): void {
-        this.draw();
+        document.addEventListener("keydown", (e) => {
+            switch (e.key) {
+                case "ArrowLeft":
+                        this.perspectiveEye[0] = this.perspectiveEye[0] + 20;
+                    break;
+                case "ArrowRight":
+                        this.perspectiveEye[0] = this.perspectiveEye[0] - 20;
+                    break;
+                case "ArrowUp":
+                    this.perspectiveEye[2] = this.perspectiveEye[2] + 20;
+                    break;
+                case "ArrowDown":
+                    this.perspectiveEye[2] = this.perspectiveEye[2] - 20;
+                    break;
+    
+            }
+            mat4.lookAt(this.viewMatrix, this.perspectiveEye, [this.perspectiveEye[0], this.perspectiveEye[1], 0], [0.0, 1.0, 0.0]);  
+            this.gl.uniformMatrix4fv(this.matViewUniformLocation, false, this.viewMatrix);
+            this.draw();
+        });
     }
 
     private draw(): void {
@@ -213,7 +230,7 @@ class CanvasApp {
                 current = stack.pop();
             else if (stack.length == 0)
                 return;
-            this.mainLoop();
+            this.draw();
 
             setTimeout(nextMove.bind(this), 1);
         };
