@@ -1,5 +1,5 @@
 import { Drawable, WallContainer } from "./drawable";
-import { mat4 } from 'gl-matrix'
+import { glMatrix, mat4 } from 'gl-matrix'
 import { boxW, boxIndices } from '../resources/boxVectors'
 import * as vBoxTexture from '../resources/wall.png';
 
@@ -25,7 +25,7 @@ export default class vWallList extends WallContainer {
         }
     }
 
-    initializeTexture():  Promise<void> {
+    initializeTexture(): Promise<void> {
         return new Promise((resolve) => {
             const gl = this.gl;
             this.boxTexture = this.gl.createTexture();
@@ -47,7 +47,7 @@ export default class vWallList extends WallContainer {
                 );
                 resolve();
             });
-             
+
         });
     }
 
@@ -60,6 +60,17 @@ export default class vWallList extends WallContainer {
                     this.gl.uniformMatrix4fv(this.boxWorldUniformLocation, false, this.walls[i][j]);
                     this.gl.drawElements(this.gl.TRIANGLES, boxIndices.length, this.gl.UNSIGNED_SHORT, 0);
                 }
+            }
+    }
+
+    rotateAroundObject(distX: number, distY: number, distZ: number, angleX:number, axis: number[]): void {
+        for (let i = 0; i < 21; i++)
+            for (let j = 0; j < 20; j++) {
+                mat4.scale(this.walls[i][j], this.walls[i][j], [5.0, 1, 1.0]);
+                mat4.translate(this.walls[i][j], this.walls[i][j], [distX - (2 * boxW * i) + boxW, -distY + (2 * boxW * j), -distZ]);
+                mat4.rotate(this.walls[i][j], this.walls[i][j], glMatrix.toRadian(angleX), axis);
+                mat4.translate(this.walls[i][j], this.walls[i][j], [(2 * boxW * i) - distX - boxW, -((2 * boxW * j) - distY), distZ]);
+                mat4.scale(this.walls[i][j], this.walls[i][j], [0.2, 1.0, 1.0]);
             }
     }
 

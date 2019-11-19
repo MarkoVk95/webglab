@@ -2,7 +2,7 @@ import boxVertexShader from './shaders/boxVertexShader.glsl'
 import boxFragmentShader from './shaders/boxFragmentShader.glsl'
 import { Drawable, WallContainer } from './js/drawable'
 import { glMatrix, mat4, mat3, vec3 } from 'gl-matrix'
-import { boxIndices, boxVertices, boxTextST } from './resources/boxVectors'
+import { boxIndices, boxVertices, boxTextST, boxW } from './resources/boxVectors'
 import bWallList from './js/bWallList'
 import hWallList from './js/hWallList'
 import vWallList from './js/vWallList'
@@ -17,11 +17,14 @@ class CanvasApp {
     private projMatrix: mat4;
     private objectList: Drawable[];
     private boxTexture: WebGLTexture;
+    private oldPosition: { x: number, y: number };
+    private drag: boolean;
 
     constructor() {
         this.canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
         this.gl = this.canvas.getContext("webgl");
         this.gl.clearColor(0.75, 0.85, 0.8, 1.0);
+
 
         if (!this.gl) {
             alert('Your browser does not support WebGL');
@@ -32,7 +35,7 @@ class CanvasApp {
         this.setupProgram();
         this.setupBuffers();
         this.setupInitialUniforms();
-        //this.setupListeners();
+        this.setupListeners();
 
         this.objectList = Array.from([new bWallList(this.gl, this.program),
         new hWallList(this.gl, this.program),
@@ -140,7 +143,33 @@ class CanvasApp {
     }
 
     private setupListeners(): void {
-        throw new Error("Method not implemented.");
+        this.canvas.addEventListener("mousedown", (e) => {
+            this.oldPosition = { x: e.clientX, y: e.clientY };
+            this.drag = true;
+            e.preventDefault();
+            return false;
+        });
+        this.canvas.addEventListener("mouseup", () => this.drag = false);
+        this.canvas.addEventListener("mousemove", (e) => {
+            if (this.drag) {
+                let iMid = 9;  //i of the rotation element
+                let jMid = 9;  // j of the rotation element
+                let distX = 2 * boxW * iMid;
+                distX += boxW;
+                let distY = 2 * boxW * jMid;
+                distY += boxW;
+                let distZ = boxW;
+                console.log("position:" + e.clientX + " old pos: " + this.oldPosition.x);
+                let angleX;
+                if (e.clientX != this.oldPosition.x)
+                    angleX = e.clientX > this.oldPosition.x ? 5 : -5;
+                else angleX = 0;
+                this.oldPosition.x = e.clientX;
+
+                this.objectList.forEach((entry) => entry.rotateAroundObject(distX, distY, distZ, angleX, [0, 1, 0]));
+                this.mainLoop();
+            }
+        });
     }
 
     private mainLoop(): void {
@@ -162,9 +191,9 @@ class CanvasApp {
             j: number,
             visited: boolean
         }
-        let current:drawableNode;
-        let grid:drawableNode[][] = [];
-        let stack:drawableNode[] = [];
+        let current: drawableNode;
+        let grid: drawableNode[][] = [];
+        let stack: drawableNode[] = [];
         for (var i = 0; i < 20; i++) {
             grid[i] = [];
             for (var j = 0; j < 20; j++)
@@ -199,7 +228,7 @@ class CanvasApp {
         };
 
         const neighbour = (current) => {
-            const neighbors:drawableNode[] = [];
+            const neighbors: drawableNode[] = [];
             if (current.j - 1 > 0)
                 var top = grid[current.i][(current.j) - 1];
             if (current.j + 1 < 20)
