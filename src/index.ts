@@ -17,7 +17,7 @@ class CanvasApp {
     private projMatrix: mat4;
     private objectList: Drawable[];
     private boxTexture: WebGLTexture;
-    private oldPosition: { x: number, y: number };
+    private oldPosition: [number, number ];
     private perspectiveEye: [number, number, number];
     private matViewUniformLocation: WebGLUniformLocation;
     private drag: boolean;
@@ -147,7 +147,7 @@ class CanvasApp {
 
     private setupListeners(): void {
         this.canvas.addEventListener("mousedown", (e) => {
-            this.oldPosition = { x: e.clientX, y: e.clientY };
+            this.oldPosition = [ e.clientX,  e.clientY ];
             this.drag = true;
             e.preventDefault();
             return false;
@@ -163,10 +163,10 @@ class CanvasApp {
                 distY += boxW;
                 let distZ = boxW;
                 let angleX;
-                if (e.clientX != this.oldPosition.x)
-                    angleX = e.clientX > this.oldPosition.x ? 5 : -5;
+                if (e.clientX != this.oldPosition[0])
+                    angleX = e.clientX > this.oldPosition[0] ? 5 : -5;
                 else angleX = 0;
-                this.oldPosition.x = e.clientX;
+                this.oldPosition[0] = e.clientX;
                 this.objectList.forEach((entry) => entry.rotateAroundObject(distX, distY, distZ, angleX, [0, 1, 0]));
                 this.draw();
             }
