@@ -7,7 +7,7 @@ import bWallList from './js/bWallList'
 import hWallList from './js/hWallList'
 import vWallList from './js/vWallList'
 
-import * as image from './resources/wall.png';
+
 
 class CanvasApp {
     private canvas: HTMLCanvasElement;
@@ -38,9 +38,12 @@ class CanvasApp {
         new hWallList(this.gl, this.program),
         new vWallList(this.gl, this.program)
         ]);
-        requestAnimationFrame(this.mainLoop.bind(this));
-        this.initRecursiveLab();
+        //requestAnimationFrame(this.mainLoop.bind(this));
 
+        Promise.all(this.objectList.filter(o => {
+            if (!o["initializeTexture"]) return false;
+            return true;
+        }).map(o => o.initializeTexture())).then(() => this.initRecursiveLab());
     }
 
     private setupInitialUniforms(): void {
@@ -93,28 +96,9 @@ class CanvasApp {
             0 * gl.FLOAT, // Offset from the beginning of a single vertex to this attribute
         );
 
-        //-> TEXTURE INITIALIZATION
-         this.boxTexture = gl.createTexture();
-        var boxImg:HTMLImageElement = new Image();
-        boxImg.src = image;
-        console.log(boxImg);
-        boxImg.onload = () => {
-            gl.bindTexture(gl.TEXTURE_2D, this.boxTexture);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texImage2D(
-                gl.TEXTURE_2D,
-                0,
-                gl.RGBA,
-                gl.RGBA,
-                gl.UNSIGNED_BYTE,
-                boxImg
-            );
-        };
-        
-        
+
+
+
 
         //-> ENABLE ATTRIBUTES
         gl.enableVertexAttribArray(positionAttribLocation);
@@ -167,21 +151,24 @@ class CanvasApp {
         this.resize(this.gl.canvas as HTMLCanvasElement);
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-        
-		this.gl.activeTexture(this.gl.TEXTURE0);
-        for (const entry of this.objectList) {
-            entry.draw();
-        }
+
+        this.objectList.forEach((entry) => entry.draw());
+
     }
 
     private initRecursiveLab() {
-        let current;
-        let grid = [];
-        let stack = [];
+        interface drawableNode {
+            i: number,
+            j: number,
+            visited: boolean
+        }
+        let current:drawableNode;
+        let grid:drawableNode[][] = [];
+        let stack:drawableNode[] = [];
         for (var i = 0; i < 20; i++) {
             grid[i] = [];
             for (var j = 0; j < 20; j++)
-                grid[i][j] = { i, j };
+                grid[i][j] = { i, j, visited: false };
         }
         current = grid[0][0];
         const nextMove = () => {
@@ -203,16 +190,16 @@ class CanvasApp {
         };
 
         const removeWall = (current, next) => {
-            var i = current.i - next.i;
+            const i = current.i - next.i;
             if (i == 1 || i == -1)
                 (this.objectList[2] as WallContainer).setWall(next.i, current.j);
-            var j = current.j - next.j;
+            const j = current.j - next.j;
             if (j == 1 || j == -1)
                 (this.objectList[1] as WallContainer).setWall(current.i, next.j);
         };
 
         const neighbour = (current) => {
-            let neighbors = [];
+            const neighbors:drawableNode[] = [];
             if (current.j - 1 > 0)
                 var top = grid[current.i][(current.j) - 1];
             if (current.j + 1 < 20)

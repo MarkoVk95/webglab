@@ -1,11 +1,16 @@
-import {Drawable} from "./drawable";
+import { Drawable } from "./drawable";
 import { mat4 } from 'gl-matrix'
 import { boxW, boxIndices } from '../resources/boxVectors'
+
+import * as bottomBoxTexture from '../resources/bottomBox.png';
+
 export default class bWallList implements Drawable {
     private gl: WebGLRenderingContext;
-    private walls: any[] = []
-    private boxWorldUniformLocation: WebGLUniformLocation
-    private program: WebGLProgram
+    private walls: any[] = [];
+    private boxWorldUniformLocation: WebGLUniformLocation;
+    private program: WebGLProgram;
+    private boxTexture: WebGLTexture;
+
     constructor(gl: WebGLRenderingContext, program: WebGLProgram) {
         this.gl = gl;
         this.program = program;
@@ -18,7 +23,36 @@ export default class bWallList implements Drawable {
             }
         }
     }
+    initializeTexture(): Promise<void> {
+        return new Promise((resolve) => {
+            const gl = this.gl;
+            this.boxTexture = this.gl.createTexture();
+            var boxImg: HTMLImageElement = new Image();
+            boxImg.src = bottomBoxTexture;
+            boxImg.addEventListener('load', () => {
+                
+                gl.bindTexture(gl.TEXTURE_2D, this.boxTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texImage2D(
+                    gl.TEXTURE_2D,
+                    0,
+                    gl.RGBA,
+                    gl.RGBA,
+                    gl.UNSIGNED_BYTE,
+                    boxImg
+                );
+                resolve();
+            });
+
+        });
+    }
+
     draw(): void {
+        this.gl.activeTexture(this.gl.TEXTURE0 );
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.boxTexture);
         for (let i = 0; i < 20; i++)
             for (let j = 0; j < 20; j++) {
                 this.gl.uniformMatrix4fv(this.boxWorldUniformLocation, false, this.walls[i][j]);
